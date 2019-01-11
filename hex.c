@@ -124,6 +124,7 @@ int main (int argc, char **argv)
                 break;
             }
             
+            // decimal
             case 'd':
             case  4 :
             {
@@ -131,7 +132,7 @@ int main (int argc, char **argv)
                 break;
             }
             
-            
+            // garbage
             case '?':
             {
                 fprintf (stderr, "unknown option\n");
@@ -166,10 +167,7 @@ int main (int argc, char **argv)
 
     // There is a non option argument
     if (optind < argc)    
-    {
-    
-          
-         
+    {  
          // copy into hexval 
          if (strlen(argv[optind]) > 0 && strlen(argv[optind]) <= MAX_INPUT)
          {
@@ -189,17 +187,19 @@ int main (int argc, char **argv)
               return 4;
          }
          
-//         printf ("debug: hexVal contains %s\n\n", hexVal);
+
     }
     
    char *rawVal  = calloc(MAX_SIZE+1, sizeof(char) );  // hold final hex value 
    int8_t size = 0;	// will hold the final string length
+   
    if ( (size = filterHex(hexVal, rawVal)) < 0 )
    {
-        // filterHex returned an error, can the program.
+        // filterHex returned an error, exit the program.
         return 5;
    }
    
+   // Processing
    if (bin == 1)
         hexToBin(rawVal);
         
@@ -210,15 +210,18 @@ int main (int argc, char **argv)
         printf ("%ld\n", hexToDec(rawVal));
     
    free(hexVal);
+   free(rawVal);
+   
    return 0;
     
         
 } 
     
-// H E L P ///////////////////////////////////////////////////////////
-//
-//
-/////////////////////////////////////////////////////////////////////    
+/*************************************************************************
+* help()
+* This program helps people who are in need 
+* Do not abuse the privilege
+*************************************************************************/   
 int help (void)
 {
     printf ("\n\n     Hexadecmial Conversion     	\n\n"\
@@ -229,18 +232,18 @@ int help (void)
             "-o   | --octal     Convert to octal(TODO)	\n"\
             "\nex: hex -b 0x123faCE			\n\n");
             
-            return 1;
+    return 0;
            
 } 
 
-// F I L T E R ///////////////////////////////////////////////////////////
-/* Remove any trailing characters (x, 0x, 0X) from the
-** users input and update the *rawVal
-*/
-//////////////////////////////////////////////////////////////////////////
+/*************************************************************************
+* filterHex()
+* Remove any trailing characters (x, 0x, 0X) from the
+* users input and update the *rawVal
+*************************************************************************/
 int filterHex(char *hexVal, char *rawVal)
 {
-     /* Iterate through the input array. If either of the first two characters ar
+     /* Iterate through the input array. If either of the first two characters are
     ** an x or X, restart the counter. 16 max hex digits allowed without an x,
     ** or following an x. Stop program if an x appears after the second value,
     ** program expects x, X, 0x, or 0X.
@@ -292,98 +295,84 @@ int filterHex(char *hexVal, char *rawVal)
         printf ("Nope, you're not going to sink this ship\n\n");
         return 4;
     }
-
-
-    //printf ("rawVal now contains %s\n", rawVal);
+    
     return count;
 }
 
-// HEXADECIMAL TO BINARY ////////////////////////////////////////////
-/* Print the value as binary using lookup table 
-**
-**
-*/
-///////////////////////////////////////////////////////////////////////
+/*************************************************************************
+* Hex to binary()
+* Converts hex to binary, couldn't you guess?
+*************************************************************************/
 int hexToBin(char *rawVal)
 {
 
     uint8_t i = 0;
-//    printf ("hexToBin() received value %s\n", rawVal);
-    
+   
     // Print the result
     for (i = 0; i <= strlen(rawVal); ++i) 
     {
-
         printf ("%s ", nibble[(unsigned char)rawVal[i] ]);
-
     }
 
     putchar('\n'); 
-
-    
+   
     return 1;
 }
 
-/************************************************************************
-* To convert to decimal, start from the least significant 
-* hexadecimal value and multiply it by it's positional exponent
-* iterate the exponent += 16
-*************************************************************************/
+/*************************************************************************
+* hexToDec()
+* You'll NEVER guess what this one does
+* But if you couldn't, it converts the hexadecimal to decimal
+*
+**************************************************************************/
 long int hexToDec(char *rawVal)
 {
-    int pos = (strlen(rawVal) - 1);	// -1 because 0 is 1st character.
-    int temp = 0;
-    long int decimal = 0;
-    long int power   = 1;
-    
-  //  printf ("debug: pos = %d\n", pos);
-  //  printf ("debug: rawVal[pos] = %c\n", rawVal[pos]);   
-    
+    int32_t pos = (strlen(rawVal) - 1);	// -1 because 0 is 1st character.
+    int32_t temp = 0;
+    int64_t decimal = 0;
+    int64_t power   = 1;
+      
     while (pos >= 0)
     {
-        // printf ("debug: temp = %d\n", temp);
-         temp = decimals[(unsigned char)rawVal[pos]];
-        // printf ("debug: temp is now %d\n", temp);
-         decimal += (temp * power);
-         power *= 16;
-         --pos;
+        temp = decimals[(unsigned char)rawVal[pos]];
+        decimal += (temp * power);
+        power *= 16;
+        --pos;
     }
     
-    // Print final value (PRINTING FROM MAIN INSTEAD)
-    //printf ("%ld\n", decimal);
-            
+    // Print value from main since other functions call this           
     return decimal;
 }
 
+/*************************************************************************
+* hexToOct()
+* Convert hexadecimal value to octal, relies on 
+* hexToDec() to work
+**************************************************************************/
 int hexToOct(char *rawVal)
 {
     // For ease, convert the hex value to decimal
-    long int decimal  = hexToDec(rawVal);
+    int64_t decimal  = hexToDec(rawVal);
     char * result = calloc(21, sizeof(char));
     int i = 0;
-//    printf ("decimal equivalent: %ld\n", decimal);
 
     /* Algorthm is the same as decimal:
     ** Divide by 2, remainder becomes rightmost digit
     ** quotient becomes new value. Loop until 0 and then
-    ** print result*/
+    ** print result */
     while (decimal != 0)
     {
-//        printf ("debug: decimal mod 8 = %li\n", (decimal % 8));
-        result[i] = ( decimal % 8 );
-//        printf ("result now contains %d\n", result[i]);
-        ++i;
+        result[i++] = ( decimal % 8 );
         decimal /= 8;
     } 
-    
+   
+    // Print resulting octal value 
     for (--i; i >= 0; --i)
     {
-      
-      printf ("%d", result[i]);
+        printf ("%d", result[i]);
     }
       
     printf ("\n");    
-      
-    return 1;
+    return 0;
 } 
 
